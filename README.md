@@ -447,16 +447,91 @@ class Car:
    - **چرا استفاده می‌شود؟**: زمانی که نیاز داریم تنها یک نمونه از کلاس در سراسر برنامه وجود داشته باشد (مثل مدیریت تنظیمات یا اتصال به دیتابیس).
    
 2. **Factory Method**
-   - **چیه؟**: این الگو یک واسط (interface) برای ایجاد اشیاء فراهم می‌کند، اما به کلاس‌های فرزند اجازه می‌دهد که شیء مناسب را ایجاد کنند.
+   - **چیه؟**: الگوی Factory یک راه برای ساختن شیء هست بدون اینکه بخوای نوع دقیق اون شیء رو در لحظه‌ی استفاده بدونی.
    - **چرا استفاده می‌شود؟**: وقتی که نیاز داریم که اشیاء به صورت داینامیک ایجاد شوند و نخواهیم که کدهای زیادی در کلاس‌ها برای ساخت اشیاء مختلف داشته باشیم.
-   
+  
+🎯 کاربرد:
+مثلاً توی اپلیکیشن، می‌خوای بسته به نوع کاربر (ادمین، مهمان، فروشنده...) یک آبجکت بسازی که یکسان استفاده بشه اما رفتار متفاوت داشته باشه.
+
+💡 مثال واقعی در جنگو – ساخت یوزرهای مختلف:
+```
+class User:
+    def whoami(self):
+        return "Normal User"
+
+class AdminUser(User):
+    def whoami(self):
+        return "Admin"
+
+class GuestUser(User):
+    def whoami(self):
+        return "Guest"
+
+class UserFactory:
+    @staticmethod
+    def create_user(user_type):
+        if user_type == "admin":
+            return AdminUser()
+        elif user_type == "guest":
+            return GuestUser()
+        return User()
+
+# استفاده:
+user = UserFactory.create_user("admin")
+print(user.whoami())  # خروجی: Admin
+```
 3. **Observer**
-   - **چیه؟**: در این الگو، یک شیء (subject) تغییرات خود را به تمام اشیاء وابسته (observers) اطلاع می‌دهد تا آن‌ها بتوانند واکنش نشان دهند.
+   - **چیه؟**: وقتی یک آبجکت تغییر می‌کنه، همه‌ی کسانی که «ناظر» اون هستن باخبر می‌شن.
    - **چرا استفاده می‌شود؟**: زمانی که نیاز داریم تا چندین شیء به تغییرات در یک شیء خاص واکنش نشان دهند (مثل سیستم‌های اطلاع‌رسانی یا برنامه‌های مبتنی بر رویداد).
-   
+
+🎯 کاربرد:
+در جنگو با signals استفاده می‌شه. مثلاً وقتی یه یوزر جدید ساخته شد، ایمیل خوش‌آمد بفرست.
+
+💡 مثال در جنگو – با Signals:
+```
+# signals.py
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from django.contrib.auth.models import User
+
+@receiver(post_save, sender=User)
+def send_welcome_email(sender, instance, created, **kwargs):
+    if created:
+        print(f"Welcome {instance.email}!")
+
+# apps.py
+def ready(self):
+    import myapp.signals
+```
 4. **Strategy**
-   - **چیه؟**: الگوی Strategy به شما این امکان را می‌دهد که الگوریتم‌های مختلف را به صورت داینامیک در زمان اجرا تغییر دهید.
-   - **چرا استفاده می‌شود؟**: زمانی که نیاز داریم رفتارهای مختلفی داشته باشیم که می‌توانند به طور داینامیک تغییر کنند، بدون اینکه کدهای دیگر تحت تاثیر قرار گیرند.
+   - **چیه؟**: استراتژی یعنی چندین روش مختلف برای انجام یک کار داشته باشیم و در زمان اجرا یکی رو انتخاب کنیم.
+   - **چرا استفاده می‌شود؟**: فرض کن چند روش برای ارسال ایمیل یا پرداخت داریم (SMTP، Sendgrid، Mailgun...) و می‌خوایم انتخاب روش وابسته به تنظیمات باشه.
+
+💡 مثال واقعی در جنگو – ارسال ایمیل با استراتژی:
+```
+class EmailStrategy:
+    def send(self, to, message):
+        raise NotImplementedError
+
+class SMTPStrategy(EmailStrategy):
+    def send(self, to, message):
+        print(f"SMTP sent to {to}")
+
+class SendgridStrategy(EmailStrategy):
+    def send(self, to, message):
+        print(f"Sendgrid sent to {to}")
+
+class EmailService:
+    def __init__(self, strategy: EmailStrategy):
+        self.strategy = strategy
+
+    def send_email(self, to, message):
+        self.strategy.send(to, message)
+
+# استفاده:
+service = EmailService(SendgridStrategy())
+service.send_email("user@example.com", "Hello!")
+```
    
 5. **Decorator**
    - **چیه؟**: این الگو به شما اجازه می‌دهد تا بدون تغییر در کدهای اصلی، قابلیت‌های جدیدی به اشیاء اضافه کنید.
